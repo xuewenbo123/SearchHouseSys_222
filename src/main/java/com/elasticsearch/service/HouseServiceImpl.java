@@ -81,6 +81,7 @@ public class HouseServiceImpl implements HouseService{
                 indexQuery.setIndexName(ES_HOUSE_INDEX_NAME);
                 indexQuery.setType(ES_HOUSE_INDEX_TYPE);
 
+
                 //上面的那几步也可以使用IndexQueryBuilder来构建
                 //IndexQuery index = new IndexQueryBuilder().withId(person.getId() + "").withObject(person).build();
 
@@ -101,6 +102,9 @@ public class HouseServiceImpl implements HouseService{
             throw e;
         }
     }
+
+
+
 
 
 

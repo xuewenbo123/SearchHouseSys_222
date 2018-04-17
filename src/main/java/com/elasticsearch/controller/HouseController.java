@@ -40,10 +40,10 @@ public class HouseController {
         return houseById;
     }
 
-    @RequestMapping("/query")
+    @RequestMapping("/query/{queryString}")
     @ResponseBody
-    public List<House> searchAll(){
-        Iterable<House> houseIterable = houseService.searchHouse("");
+    public List<House> searchAll(@PathVariable("queryString") String queryString){
+        Iterable<House> houseIterable = houseService.searchHouse(queryString);
         Iterator<House> iterator = houseIterable.iterator();
         List<House> hList = new ArrayList<>();
         while(iterator.hasNext()){
@@ -66,7 +66,7 @@ public class HouseController {
     public Object query() {
         double lat = 39.929986;
         double lon = 116.395645;
-        double distance = 20000; //200米
+        double distance = 200; //2000米
 
         List<House> hList = houseService.findHouseWithin(lat, lon, distance);
         return hList;
@@ -86,7 +86,7 @@ public class HouseController {
     public String insertData(){
         double lat = 39.929986;
         double lon = 116.395645;
-        List<House> houseList = new ArrayList<>(900000);
+        List<House> houseList = new ArrayList<>(10000);
         for (int i = 100000; i < 110000; i++) {
             double max = 0.00001;
             double min = 0.000001;
@@ -104,7 +104,6 @@ public class HouseController {
             houseList.add(house);
         }
         houseService.bulkIndex(houseList);
-
         return "数据插入成功！";
     }
 

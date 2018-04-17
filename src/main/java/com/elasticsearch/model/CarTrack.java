@@ -13,7 +13,7 @@ public class CarTrack implements Serializable {
     private String id;
     //汽车牌号
     private String plateNo;
-    //信号发送时间
+    //定位时间
     private Long SignalTransTime;
     //经纬度
     @GeoPointField

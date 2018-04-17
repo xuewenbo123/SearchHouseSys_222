@@ -45,4 +45,32 @@ public class CarTrackController {
         return carTrack;
     }
 
+
+    @RequestMapping("/selectCarTrackWithin/{distance}")
+    @ResponseBody
+    public List<CarTrack> getCarTrackWithin(@PathVariable("distance") double distance){
+        double lat = 39.929986;
+        double lon = 116.395645;
+//        double distance = 100; //100米
+        List<CarTrack> carTrack = carTrackService.getCarWithin(lat, lon, distance);
+        return carTrack;
+    }
+
+
+    /*
+     * 说明：查询某时间段内的某id汽车行驶轨迹
+     */
+    @RequestMapping("/selectByTime/{id}")
+    @ResponseBody
+    public List<CarTrack> getCarTrackByTime(@PathVariable("id") String id){
+        Long startTime = 1523943194836L;
+        Long endTime = 1523943951673L;
+        List<CarTrack> carTrack = carTrackService.getCarTrack(id, startTime, endTime);
+        return carTrack;
+    }
+
+
+
+
+
 }

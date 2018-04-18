@@ -21,4 +21,6 @@ public interface CarTrackService {
     //获取距离中心点一定距离的文档数据:lat纬度，lon经度
     List<CarTrack> getCarWithin(double lat,double lon,double distance);
 
+    String getById(String index,String type,String id);
+
 }

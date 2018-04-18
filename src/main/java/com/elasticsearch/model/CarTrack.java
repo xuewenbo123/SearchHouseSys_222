@@ -1,22 +1,19 @@
 package com.elasticsearch.model;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.elasticsearch.annotations.Document;
-import org.springframework.data.elasticsearch.annotations.GeoPointField;
 
 import java.io.Serializable;
 import java.util.Date;
-@Document(indexName = "searchhousesys",type = "car_track",indexStoreType="fs",shards=5,replicas=1,refreshInterval="-1")
+//@Document(indexName = "searchhousesys",type = "car_track",indexStoreType="fs",shards=5,replicas=1,refreshInterval="-1")
 public class CarTrack implements Serializable {
 
-    @Id
+//    @Id
     private String id;
     //汽车牌号
     private String plateNo;
     //定位时间
     private Long SignalTransTime;
     //经纬度
-    @GeoPointField
+//    @GeoPointField
     private String location;
 
     public String getId() {

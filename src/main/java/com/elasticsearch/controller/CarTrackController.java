@@ -69,8 +69,12 @@ public class CarTrackController {
         return carTrack;
     }
 
-
-
+    @RequestMapping("/getById/{id}")
+    @ResponseBody
+    public String getById(@PathVariable("id") String id){
+        String byId = carTrackService.getById("searchhousesys", "car_track", id);
+        return byId;
+    }
 
 
 }

@@ -91,10 +91,11 @@
         </dependency>
 
         <!-- elasticsearch -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-elasticsearch</artifactId>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>org.springframework.boot</groupId>-->
+            <!--<artifactId>spring-boot-starter-data-elasticsearch</artifactId>-->
+        <!--</dependency>-->
+
 
         <dependency>
             <groupId>com.sun.jna</groupId>
@@ -108,6 +109,21 @@
             <artifactId>transport</artifactId>
             <version>5.6.3</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.elasticsearch</groupId>
+            <artifactId>elasticsearch</artifactId>
+            <version>5.6.3</version>
+        </dependency>
+
+        <!-- elasticsearch依赖,版本需要小于等于2.7 -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>2.7</version>
+        </dependency>
+
+
 
     </dependencies>
 

@@ -28,11 +28,10 @@ public class CarTrackController {
     @ResponseBody
     public String saveDoc(@PathVariable("id") String id){
         HashMap<String, Object> m = new HashMap<>();
-        m.put("name","豆丁");
-        m.put("age","6");
-        m.put("location","39.955311,117.33200");
-        m.put("signalTime",System.currentTimeMillis());
-        String index = esClientUtil.saveDoc("dog", "doginfo", id, m);
+        m.put("plateNo","豫A5596");
+        m.put("SignalTransTime",System.currentTimeMillis());
+        m.put("location","45.354444,118.3388888");
+        String index = esClientUtil.saveDoc("car", "car_track", id, m);
         return "创建成功："+index;
     }
 
@@ -70,14 +69,20 @@ public class CarTrackController {
         String mapping = "{\n" +
                 "    \"doginfo\": {\n" +
                 "      \"properties\": {\n" +
+
                 "        \"name\": {\n" +
                 "          \"type\": \"string\"\n" +
+                "          \"index\": \"not_analyzed\"\n" +
                 "        }\n" +
+
                 "        \"location\": {\n" +
                 "          \"type\": \"geo_point\"\n" +
-                "        \"signalTime\": {\n" +
-                "          \"type\": \"long\"\n" +
                 "        }\n" +
+
+//                "        \"signalTime\": {\n" +
+//                "          \"type\": \"long\"\n" +
+//                "        }\n" +
+
                 "      }\n" +
                 "    }\n" +
                 "  }";
@@ -105,13 +110,22 @@ public class CarTrackController {
     }
 
 
-    //字段值匹配查询
+    //字段值匹配查询：
     @RequestMapping("/fullTextQuery")
     @ResponseBody
     public String fullTextQuery(){
         String result = esClientUtil.fullTextQuery("car","car_track","plateNo","京A2222");
         return result;
     }
+
+    //字段值匹配查询：
+    @RequestMapping("/getDocByTermQuery/{queryString}")
+    @ResponseBody
+    public String getDocByTermQuery(@PathVariable("queryString") String queryString){
+        String result = esClientUtil.getDocByTermQuery("car","car_track","plateNo",queryString);
+        return result;
+    }
+
 
 
 
@@ -124,11 +138,6 @@ public class CarTrackController {
         String docInDistance = esClientUtil.getDocMile("car", "car_track","location", lat, lon, Double.valueOf(distance));
         return docInDistance;
     }
-
-
-
-
-
 
 
 

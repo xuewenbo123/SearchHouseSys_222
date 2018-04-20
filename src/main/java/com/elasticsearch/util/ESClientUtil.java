@@ -9,6 +9,7 @@ import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.MultiSearchResponse;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.Requests;
 import org.elasticsearch.client.transport.TransportClient;
@@ -17,6 +18,7 @@ import org.elasticsearch.common.unit.DistanceUnit;
 import org.elasticsearch.index.query.GeoDistanceQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.TermQueryBuilder;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +31,7 @@ import java.util.Map;
 
 import static org.elasticsearch.index.query.QueryBuilders.geoDistanceQuery;
 import static org.elasticsearch.index.query.QueryBuilders.matchQuery;
+import static org.elasticsearch.index.query.QueryBuilders.termQuery;
 
 @Service
 public class ESClientUtil {
@@ -48,7 +51,6 @@ public class ESClientUtil {
         IndexResponse response = client.prepareIndex(index, type,id).setSource(json).get();
         return response.getIndex();
     }
-
 
 
 
@@ -93,10 +95,18 @@ public class ESClientUtil {
     }
 
 
-    //全文搜索查询；  name:  字段；   text: 对应值
+    //全文搜索查询，非精确查询；  name:  字段；   text: 对应值
     public String fullTextQuery(String index, String type, String name,String text) {
         QueryBuilder qb = matchQuery(name,text);
-        SearchResponse searchResponse = client.prepareSearch(index).setTypes(type).setQuery(qb).get();
+        SearchResponse searchResponse = client
+                .prepareSearch(index)
+                .setTypes(type)
+                .setQuery(qb)
+                .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
+                // 1.SearchType.DFS_QUERY_THEN_FETCH = 精确查询
+                // 2.SearchType.SCAN = 扫描查询,无序
+                // 3.SearchType.COUNT = 不设置的话,这个为默认值,还有的自己去试试吧
+                .get();
         SearchHit[] hits = searchResponse.getHits().getHits();
         String docStr = "";
         for(SearchHit doc:hits){
@@ -260,7 +270,6 @@ public class ESClientUtil {
      * @param distance 距离/Km
      * @return
      */
-
     public String getDocInDistance(String index,String type,String locationProperty,double lat,double lon,double distance){
 
         SearchRequestBuilder sr = client.prepareSearch(index).setTypes(type);
@@ -284,7 +293,6 @@ public class ESClientUtil {
                 .distance(distance, DistanceUnit.KILOMETERS)
                 .optimizeBbox("memory")
                 .geoDistance(GeoDistance.ARC);
-
         SearchResponse searchResponse = client.prepareSearch(index).setTypes(type).setQuery(qb).get();
         SearchHit[] hits = searchResponse.getHits().getHits();
         String docStr = "";
@@ -293,6 +301,28 @@ public class ESClientUtil {
         }
         return docStr;
     }
+
+    //不分词查询:  字段设置不分词！
+    public String getDocByTermQuery(String index, String type,String filed,String value){
+        QueryBuilder qb = termQuery(filed, value);
+        SearchResponse searchResponse = client.prepareSearch(index).setTypes(type).setQuery(qb).execute().actionGet();
+        SearchHit[] hits = searchResponse.getHits().getHits();
+        String docStr = "";
+        for (SearchHit doc:hits){
+            docStr += doc.getSourceAsString();
+        }
+        return docStr;
+    }
+
+
+    //聚合计算，一定范围内每个文档值与原点的距离
+    public String getDocByAggs(String index,String type){
+
+
+
+        return "";
+    }
+
 
 
 

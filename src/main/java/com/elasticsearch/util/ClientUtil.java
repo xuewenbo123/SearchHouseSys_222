@@ -2,16 +2,35 @@ package com.elasticsearch.util;
 
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
+import org.elasticsearch.action.delete.DeleteResponse;
+import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.search.SearchRequestBuilder;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.SearchType;
+import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.geo.GeoPoint;
+import org.elasticsearch.common.unit.DistanceUnit;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.index.query.GeoDistanceQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.aggregations.AggregationBuilder;
+import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.bucket.range.Range;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
+import static org.elasticsearch.index.query.QueryBuilders.geoBoundingBoxQuery;
+import static org.elasticsearch.index.query.QueryBuilders.geoDistanceQuery;
+import static org.elasticsearch.index.query.QueryBuilders.matchQuery;
 
 @Service
 public class ClientUtil {
@@ -37,15 +56,14 @@ public class ClientUtil {
      * @param mapping
      * @return     index 若已经存在则不能添加mapping
      */
-    public boolean creatIndexAndMapping(String indexName,XContentBuilder mapping){
-        String s = mapping.toString();
+    public boolean creatIndexAndMapping(String indexName,String type,XContentBuilder mapping){
         Map<String, Object> settings = new HashMap<>();
         settings.put("number_of_shards", 5);//分片数量
         settings.put("number_of_replicas", 0);//复制数量
         settings.put("refresh_interval", "10s");//刷新时间
         CreateIndexRequestBuilder cib = client.admin().indices().prepareCreate(indexName);
         cib.setSettings(settings);
-        cib.addMapping(indexName, mapping);
+        cib.addMapping(type, mapping);
         CreateIndexResponse indexResponse = cib.execute().actionGet();
         return indexResponse.isAcknowledged();
     }
@@ -109,18 +127,209 @@ public class ClientUtil {
     }
 
 
+    /**
+     * 更新文档
+     * @param index
+     * @param type
+     * @param id
+     * @param doc
+     * @return
+     */
+    public String updateDoc(String index, String type, String id, Map<String,Object> doc) {
+        UpdateResponse updateResponse = client.prepareUpdate(index, type, id).setDoc(doc).get();
+        return updateResponse.getId();
+    }
+
+
+    /**
+     * 删除指定id文档
+     * @param index
+     * @param type
+     * @param id
+     * @return
+     */
+    public String deleteDoc(String index, String type, String id) {
+        DeleteResponse response = client.prepareDelete(index, type, id).get();
+        return response.getId();
+    }
+
+
+    /**
+     * 根据id获取对应的存储内容
+     * @param index
+     * @param type
+     * @param id
+     * @return
+     */
+    public String getDocById(String index, String type, String id) {
+        GetResponse response = client.prepareGet(index, type, id).get();
+        if (response.isExists()) {
+            return response.getSourceAsString();
+        }
+        return null;
+    }
+
+
+    /**
+     * 说明：字段type区分是否精准查询
+     * @param index
+     * @param type
+     * @param name  : 查询字段filed
+     * @param text  : 字段对应value
+     * @return
+     */
+    public String fullTextQuery(String index, String type, String name,String text) {
+        QueryBuilder qb = matchQuery(name,text);
+        SearchResponse searchResponse = client
+                .prepareSearch(index)
+                .setTypes(type)
+                .setQuery(qb)
+                .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
+                // 1.SearchType.DFS_QUERY_THEN_FETCH = 精确查询
+                // 2.SearchType.SCAN = 扫描查询,无序
+                // 3.SearchType.COUNT = 不设置的话,这个为默认值,还有的自己去试试吧
+                .get();
+        SearchHit[] hits = searchResponse.getHits().getHits();
+        String docStr = "";
+        for(SearchHit doc:hits){
+            docStr += doc.getSourceAsString();
+        }
+        return docStr;
+    }
+
+    /**
+     * 获取index对应type的所有存储文档
+     * @param index
+     * @param type
+     * @return
+     */
+    public String getDocAll() {
+        SearchResponse response = client.prepareSearch().get();
+        SearchHit[] hits = response.getHits().getHits();
+        String docStr = "";
+        for(SearchHit doc:hits){
+            docStr += doc.getSourceAsString();
+        }
+        return docStr;
+    }
+
+
+
+    /**
+     * 聚合查询，获取中心点不同距离范围内文档数量
+     * @param index
+     * @param type
+     * @return
+     */
+    public String geoDocCount(String index,String type,double lat,double lon){
+        AggregationBuilder aggregation	= AggregationBuilders
+                .geoDistance("agg",	new GeoPoint(lat,lon))
+                .field("location")   //字段名
+                .unit(DistanceUnit.KILOMETERS)
+                .addUnboundedTo(5.0)
+                .addRange(5.0,	10.0)
+                .addRange(10.0,	500.0)
+                .addRange(500.0,1000.0);
+        SearchResponse searchResponse = client.prepareSearch(index).setTypes(type).addAggregation(aggregation).execute().actionGet();
+        Range agg = searchResponse.getAggregations().get("agg");
+        List<? extends Range.Bucket> buckets = agg.getBuckets();
+        String s = "";
+        for (Range.Bucket entry : agg.getBuckets()) {
+            String key = entry.getKeyAsString();    // key as String
+            Number from = (Number) entry.getFrom(); // bucket from value
+            Number to = (Number) entry.getTo();     // bucket to value
+            long docCount = entry.getDocCount();    // Doc count
+            String fromAsString = entry.getFromAsString();
+            String toAsString = entry.getToAsString();
+            //此处拼接结果
+            s += "查询范围：["+from+","+to+"]; 文档数量："+docCount+" | ";
+        }
+        return s;
+    }
+
+    //获取矩形内的文档
+    public String getDocInBox(String index,String type){
+
+        QueryBuilder qb = geoBoundingBoxQuery("location")	//field
+         .setCorners(38.73,	-80,
+                 //bounding	box	top	left	point
+                 50.717,	120);//bounding	box	bottom	right	point
+        SearchResponse searchResponse = client.prepareSearch(index).setTypes(type).setQuery(qb).execute().actionGet();
+        SearchHit[] hits = searchResponse.getHits().getHits();
+        String docStr = "";
+        for(SearchHit doc:hits){
+            docStr += doc.getSourceAsString();
+        }
+        return docStr;
+    }
 
 
 
 
 
 
+    /**
+     * 获取中心点周围指定范围内的文档
+     * @param index 索引名称
+     * @param location 地理位置属性名
+     * @param lat 纬度
+     * @param lon 经度
+     * @param distance 距离/Km
+     * @return
+     */
+    public String geoFoundDoc(String index,String type,double lat,double lon,double distance){
+        QueryBuilder qb = geoDistanceQuery("location")		//field
+                .point(lat,	lon)
+                .distance(distance,	DistanceUnit.KILOMETERS);
+        SearchResponse searchResponse = client.prepareSearch(index).setTypes(type).setQuery(qb).execute().actionGet();
+        SearchHit[] hits = searchResponse.getHits().getHits();
+        String docStr = "";
+        for (SearchHit doc:hits){
+            docStr += doc.getSourceAsString();
+        }
+        return docStr;
+    }
 
 
 
 
 
+    /**
+     * 获取中心点周围指定范围内的文档
+     * @param index 索引名称
+     * @param locationProperty 地理位置属性名
+     * @param lat 纬度
+     * @param lon 经度
+     * @param distance 距离/Km
+     * @return
+     */
+    //bug
+    public String getDocInDistance(String index,String type,String locationProperty,double lat,double lon,double distance){
+        SearchRequestBuilder sr = client.prepareSearch(index).setTypes(type);
+//        sr.setFrom(0).setSize(1000);//设置获取的数量为0--1000
+        GeoDistanceQueryBuilder geoBuilder = geoDistanceQuery(locationProperty).point(lat, lon).distance(distance, DistanceUnit.METERS);
+        sr.setPostFilter(geoBuilder);
+        SearchResponse searchResponse = sr.execute().actionGet();
+        SearchHit[] hits = searchResponse.getHits().getHits();
+        String docStr = "";
+        for (SearchHit doc:hits){
+            docStr += doc.getSourceAsString();
+        }
+        return docStr;
+    }
 
+
+    //bug
+    public String geoQuery(String index,String type,String location,double lat,double lon,String distance){
+        GeoDistanceQueryBuilder qb = geoDistanceQuery(location).point(lat, lon).distance(distance, DistanceUnit.METERS);
+        SearchResponse searchResponse = client.prepareSearch(index).setTypes(type).setQuery(qb).get();
+        SearchHit[] hits = searchResponse.getHits().getHits();
+        String docStr = "";
+        for (SearchHit doc:hits){
+            docStr += doc.getSourceAsString();
+        }
+        return docStr;
+    }
 
 
 
@@ -142,7 +351,7 @@ public class ClientUtil {
 
         XContentBuilder mapping = XContentFactory.jsonBuilder()
                 .startObject()
-                .startObject("house")
+                .startObject("wsce")
                 //注释代码放开出错，新版本es不支持？ 有待查证；
 //                .startObject("_ttl")//有了这个设置,就等于在这个给索引的记录增加了失效时间,
 //                //ttl的使用地方如在分布式下,web系统用户登录状态的维护.

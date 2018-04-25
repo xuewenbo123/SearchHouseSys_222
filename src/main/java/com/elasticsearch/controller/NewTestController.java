@@ -26,6 +26,17 @@ public class NewTestController {
     private ClientUtil clientUtil;
 
 
+    @RequestMapping("/getDocInDistance/{distance}")
+    @ResponseBody
+    public String getDocInDistance(@PathVariable("distance") String distance){
+        double lat = 39.9047253;
+        double lon = 116.395645;
+        Double aDouble = Double.valueOf(distance);
+        String s = clientUtil.getDocInDistance("girlfriend", "gf_gentle",  lat, lon, aDouble);
+        return s;
+    }
+
+
 
     @RequestMapping("/saveDocAll")
     @ResponseBody
@@ -40,7 +51,7 @@ public class NewTestController {
         String id = "1";
         map.put("name","一号");
         map.put("age",18);
-        map.put("locations", objectMapper.writeValueAsString(locations));
+        map.put("locations",objectMapper.writeValueAsString(locations));
         map.put("school","中南大学");
         String saveDoc = clientUtil.saveDoc("girlfriend", "gf_gentle", id, map);
 

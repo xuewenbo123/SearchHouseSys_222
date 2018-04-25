@@ -1,5 +1,6 @@
 package com.elasticsearch.controller;
 
+import com.elasticsearch.model.MapLocation;
 import com.elasticsearch.util.ClientUtil;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
@@ -21,17 +22,19 @@ public class TestController {
     private ClientUtil clientUtil;
 
 
-    //方法报错，工具类不能正常执行
+
+
+
+
     @RequestMapping("/geoFoundDoc/{distance}")
     @ResponseBody
     public String geoFoundDoc(@PathVariable("distance") String distance){
         double lat = 39.929986;
         double lon = 116.395645;
         Double aDouble = Double.valueOf(distance);
-        String s = clientUtil.geoFoundDoc("student", "stu_type",  lat, lon, aDouble);
+        String s = clientUtil.getDocInDistance("student", "stu_type",  lat, lon, aDouble);
         return s;
     }
-
 
 
     @RequestMapping("/getDocInBox")
@@ -41,18 +44,68 @@ public class TestController {
         return s;
     }
 
-
     @RequestMapping("/geoDocCount")
     @ResponseBody
     public String getDocInDistance(String distance){
         double lat = 39.929986;
         double lon = 116.395645;
         Double aDouble = Double.valueOf(distance);
-//        String s = clientUtil.getDocInDistance("student", "stu_type", "location", lat, lon, aDouble);
-//        String s = clientUtil.geoQuery("student", "stu_type", "location", lat, lon, distance);
         String s = clientUtil.geoDocCount("student", "stu_type",lat,lon);
         return s;
     }
+
+
+
+    @RequestMapping("/saveDocAll")
+    @ResponseBody
+    public String saveDocAll(){
+
+        Map<String, Object> map = new HashMap<>();
+        map.put("age",80);
+        map.put("location","39.91111,117.22111");
+        map.put("name","张三丰");
+        map.put("school","中南大学");
+        String id = "1";
+        String saveDoc = clientUtil.saveDoc("student", "stu_type", id, map);
+
+        Map<String, Object> map2 = new HashMap<>();
+        map2.put("age",21);
+        map2.put("location","39.911122,117.33322");
+        map2.put("name","李白");
+        map2.put("school","复旦大学");
+        id = "2";
+        clientUtil.saveDoc("student", "stu_type", id, map2);
+
+        Map<String, Object> map3 = new HashMap<>();
+        map3.put("age",21);
+        map3.put("location","40.911333,116.33333");
+        map3.put("name","张三");
+        map3.put("school","复旦大学研究生");
+        id = "3";
+        clientUtil.saveDoc("student", "stu_type", id, map3);
+
+        Map<String, Object> map4 = new HashMap<>();
+        map4.put("age",32);
+        map4.put("location","40.911344,118.33344");
+        map4.put("name","孟浩然");
+        map4.put("school","清华大学");
+        id = "4";
+        clientUtil.saveDoc("student", "stu_type", id, map4);
+
+        Map<String, Object> map5 = new HashMap<>();
+        map5.put("age",32);
+        map5.put("location","41.911555,117.33555");
+        map5.put("name","孟浩然");
+        map5.put("school","清华大学");
+        id = "5";
+        clientUtil.saveDoc("student", "stu_type", id, map5);
+
+        return saveDoc;
+    }
+
+
+
+
 
 
     @RequestMapping("/getDocAll")

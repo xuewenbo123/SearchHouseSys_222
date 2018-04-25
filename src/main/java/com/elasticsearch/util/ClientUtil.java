@@ -265,9 +265,6 @@ public class ClientUtil {
 
 
 
-
-
-
     /**
      * 获取中心点周围指定范围内的文档
      * @param index 索引名称
@@ -277,7 +274,7 @@ public class ClientUtil {
      * @param distance 距离/Km
      * @return
      */
-    public String geoFoundDoc(String index,String type,double lat,double lon,double distance){
+    public String getDocInDistance(String index,String type,double lat,double lon,double distance){
         QueryBuilder qb = geoDistanceQuery("location")		//field
                 .point(lat,	lon)
                 .distance(distance,	DistanceUnit.KILOMETERS);
@@ -292,44 +289,6 @@ public class ClientUtil {
 
 
 
-
-
-    /**
-     * 获取中心点周围指定范围内的文档
-     * @param index 索引名称
-     * @param locationProperty 地理位置属性名
-     * @param lat 纬度
-     * @param lon 经度
-     * @param distance 距离/Km
-     * @return
-     */
-    //bug
-    public String getDocInDistance(String index,String type,String locationProperty,double lat,double lon,double distance){
-        SearchRequestBuilder sr = client.prepareSearch(index).setTypes(type);
-//        sr.setFrom(0).setSize(1000);//设置获取的数量为0--1000
-        GeoDistanceQueryBuilder geoBuilder = geoDistanceQuery(locationProperty).point(lat, lon).distance(distance, DistanceUnit.METERS);
-        sr.setPostFilter(geoBuilder);
-        SearchResponse searchResponse = sr.execute().actionGet();
-        SearchHit[] hits = searchResponse.getHits().getHits();
-        String docStr = "";
-        for (SearchHit doc:hits){
-            docStr += doc.getSourceAsString();
-        }
-        return docStr;
-    }
-
-
-    //bug
-    public String geoQuery(String index,String type,String location,double lat,double lon,String distance){
-        GeoDistanceQueryBuilder qb = geoDistanceQuery(location).point(lat, lon).distance(distance, DistanceUnit.METERS);
-        SearchResponse searchResponse = client.prepareSearch(index).setTypes(type).setQuery(qb).get();
-        SearchHit[] hits = searchResponse.getHits().getHits();
-        String docStr = "";
-        for (SearchHit doc:hits){
-            docStr += doc.getSourceAsString();
-        }
-        return docStr;
-    }
 
 
 

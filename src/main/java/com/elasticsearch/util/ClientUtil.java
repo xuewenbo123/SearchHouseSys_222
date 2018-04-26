@@ -1,5 +1,6 @@
 package com.elasticsearch.util;
 
+import org.apache.lucene.search.BooleanQuery;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
@@ -14,23 +15,19 @@ import org.elasticsearch.common.geo.GeoPoint;
 import org.elasticsearch.common.unit.DistanceUnit;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
-import org.elasticsearch.index.query.GeoDistanceQueryBuilder;
-import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.*;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.range.Range;
+import org.elasticsearch.search.sort.SortOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-import static org.elasticsearch.index.query.QueryBuilders.geoBoundingBoxQuery;
-import static org.elasticsearch.index.query.QueryBuilders.geoDistanceQuery;
-import static org.elasticsearch.index.query.QueryBuilders.matchQuery;
+import static org.elasticsearch.index.query.QueryBuilders.*;
 
 @Service
 public class ClientUtil {
@@ -198,9 +195,7 @@ public class ClientUtil {
     }
 
     /**
-     * 获取index对应type的所有存储文档
-     * @param index
-     * @param type
+     * 获取所有存储文档
      * @return
      */
     public String getDocAll() {
@@ -288,21 +283,97 @@ public class ClientUtil {
     }
 
 
+    /**
+     * 查询文档并按照时间排序
+     * @param index 索引名称
+     * @param type
+     * @return
+     */
+    public String getDocAndSort(String index,String type){
+
+        SearchRequestBuilder sr = this.client.prepareSearch(index).setTypes(type).addSort("createTime", SortOrder.DESC);
+        SearchResponse response = sr.get();
+        SearchHit[] hits = response.getHits().getHits();
+        String docStr = "";
+        for (SearchHit doc:hits){
+            docStr += doc.getSourceAsString();
+        }
+        return docStr;
+    }
+
+    /**
+     * 指定时间段内查询文档，并按照文档创建时间排序
+     * @param index 索引名称
+     * @param type
+     * @return
+     */
+    public String getDocByTimeRange(String index,String type,String startTime,String endTime){
+        QueryBuilder qb = rangeQuery("createTime") //查询字段
+                .from(startTime).to(endTime);
+        SearchRequestBuilder sr = this.client.prepareSearch(index).setTypes(type).addSort("createTime", SortOrder.DESC);
+        sr.setQuery(qb);
+        SearchResponse response = sr.get();
+        SearchHit[] hits = response.getHits().getHits();
+        String docStr = "";
+        for (SearchHit doc:hits){
+            docStr += doc.getSourceAsString();
+        }
+        return docStr;
+    }
+
+
+    public List<Map<String,Object>> fffff(String index,String type,String nameValue,String startTime,String endTime){
+        BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
+        boolQueryBuilder
+                .must(QueryBuilders.termQuery("name",nameValue))
+                .must(QueryBuilders.rangeQuery("createTime").from(startTime).to(endTime));
+        SearchRequestBuilder builder = this.client
+                .prepareSearch(index).setTypes(type)
+                .setQuery(boolQueryBuilder)
+                .addSort("createTime", SortOrder.DESC);
+        SearchResponse response = builder.get();
+        return dealResponse(response);
+    }
 
 
 
 
 
 
+    //测试返回值list
+    public List<Map<String,Object>> getDocAsMap(String index,String type){
+        SearchRequestBuilder sr = this.client.prepareSearch(index).setTypes(type).addSort("createTime", SortOrder.DESC);
+        SearchResponse response = sr.get();
+        return dealResponse(response);
+    }
+
+
+
+    public List<Map<String,Object>> getDocByTermAndSort(String index,String type,String nameValue,String startTime,String endTime){
+        QueryBuilder qb = termQuery("name", nameValue);
+        QueryBuilder rangeQb = rangeQuery("createTime") .from(startTime).to(endTime);
+        SearchRequestBuilder sr = this.client.prepareSearch(index).setTypes(type).addSort("createTime", SortOrder.DESC);
+        sr.setQuery(qb);
+        sr.setQuery(rangeQb);
+        SearchResponse response = sr.get();
+        return dealResponse(response);
+    }
 
 
 
 
 
 
-
-
-
+    //返回值处理
+    public List<Map<String,Object>> dealResponse(SearchResponse response){
+        SearchHit[] hits = response.getHits().getHits();
+        List<Map<String,Object>> list = new LinkedList<>();
+        for (SearchHit doc:hits){
+            Map<String, Object> map = doc.getSourceAsMap();
+            list.add(map);
+        }
+        return list;
+    }
 
 
     //创建mapping方法实例

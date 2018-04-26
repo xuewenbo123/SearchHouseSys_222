@@ -44,14 +44,14 @@ public class NewTestController {
         ObjectMapper objectMapper = new ObjectMapper();
 
         MapLocation locations = new MapLocation();
-
         locations.setLat(116.4072154982);
         locations.setLon(39.9047253699);
+//        objectMapper.writeValueAsString(locations);
         Map<String, Object> map = new HashMap<>();
         String id = "1";
         map.put("name","一号");
         map.put("age",18);
-        map.put("locations",objectMapper.writeValueAsString(locations));
+        map.put("locations",locations);
         map.put("school","中南大学");
         String saveDoc = clientUtil.saveDoc("girlfriend", "gf_gentle", id, map);
 
@@ -62,7 +62,7 @@ public class NewTestController {
         id = "2";
         map2.put("name","二号");
         map2.put("age",16);
-        map2.put("locations", objectMapper.writeValueAsString(locations));
+        map2.put("locations", locations);
         map2.put("school","江南大学");
         clientUtil.saveDoc("girlfriend", "gf_gentle", id, map2);
 
@@ -73,7 +73,7 @@ public class NewTestController {
         id = "3";
         map3.put("name","三号");
         map3.put("age",21);
-        map3.put("locations", objectMapper.writeValueAsString(locations));
+        map3.put("locations", locations);
         map3.put("school","江南大学研究生");
         clientUtil.saveDoc("girlfriend", "gf_gentle", id, map3);
 
@@ -84,7 +84,7 @@ public class NewTestController {
         id = "4";
         map4.put("name","四号");
         map4.put("age",21);
-        map4.put("locations", objectMapper.writeValueAsString(locations));
+        map4.put("locations",locations);
         map4.put("school","江南大学研究生");
         clientUtil.saveDoc("girlfriend", "gf_gentle", id, map4);
 
@@ -95,7 +95,7 @@ public class NewTestController {
         id = "5";
         map5.put("name","五号");
         map5.put("age",21);
-        map5.put("locations", objectMapper.writeValueAsString(locations));
+        map5.put("locations", locations);
         map5.put("school","水木清华");
         clientUtil.saveDoc("girlfriend", "gf_gentle", id, map5);
 

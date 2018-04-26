@@ -132,6 +132,9 @@ public class TestController {
     @ResponseBody
     public String saveDocAll(){
 
+        final String index = "student";
+        final String type = "stu_type";
+
         Map<String, Object> map = new HashMap<>();
         map.put("age",80);
         map.put("location","39.91111,117.22111");
@@ -139,7 +142,7 @@ public class TestController {
         map.put("school","中南大学");
         map.put("createTime",System.currentTimeMillis()+5000);
         String id = "1";
-        String saveDoc = clientUtil.saveDoc("student", "stu_type", id, map);
+        String saveDoc = clientUtil.saveDoc(index, type, id, map);
 
         Map<String, Object> map2 = new HashMap<>();
         map2.put("age",21);
@@ -148,7 +151,7 @@ public class TestController {
         map2.put("school","复旦大学");
         map2.put("createTime",System.currentTimeMillis()+3000);
         id = "2";
-        clientUtil.saveDoc("student", "stu_type", id, map2);
+        clientUtil.saveDoc(index, type, id, map2);
 
         Map<String, Object> map3 = new HashMap<>();
         map3.put("age",21);
@@ -157,7 +160,7 @@ public class TestController {
         map3.put("school","复旦大学研究生");
         map3.put("createTime",System.currentTimeMillis());
         id = "3";
-        clientUtil.saveDoc("student", "stu_type", id, map3);
+        clientUtil.saveDoc(index, type, id, map3);
 
         Map<String, Object> map4 = new HashMap<>();
         map4.put("age",32);
@@ -166,7 +169,7 @@ public class TestController {
         map4.put("school","清华大学");
         map4.put("createTime",System.currentTimeMillis());
         id = "4";
-        clientUtil.saveDoc("student", "stu_type", id, map4);
+        clientUtil.saveDoc(index, type, id, map4);
 
         Map<String, Object> map5 = new HashMap<>();
         map5.put("age",32);
@@ -175,7 +178,7 @@ public class TestController {
         map5.put("school","北京大学");
         map5.put("createTime",System.currentTimeMillis());
         id = "5";
-        clientUtil.saveDoc("student", "stu_type", id, map5);
+        clientUtil.saveDoc(index, type, id, map5);
 
         return saveDoc;
     }
